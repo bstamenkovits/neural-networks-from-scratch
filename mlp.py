@@ -16,6 +16,7 @@ class Neuron:
 
         tanh (Σ x_i * w_i + b) 
         """
+        assert len(x) == len(self.w), "inputs and weights are of different sizes"
         return ( sum((wi*xi for wi, xi in zip(self.w, x)), self.b) ).tanh()
     
     def parameters(self):
@@ -43,15 +44,23 @@ class MLP:
     
     def __init__(
             self, 
-            input_layer_size:int, 
-            hidden_layer_sizes:List[int], 
-            output_layer_size:int
+            x_train, 
+            y_train, 
+            hidden_layer_sizes, 
         ) -> None:
-        layer_sizes = [input_layer_size] + hidden_layer_sizes + [output_layer_size]
-        self.layers = self.construct_layers(layer_sizes)
+        self.x_train = x_train
+        self.y_train = y_train
+        self.layers = self.construct_layers(hidden_layer_sizes)
 
-    @staticmethod
-    def construct_layers(layer_sizes):
+    def construct_layers(self, hidden_layer_sizes):
+        xdim = len(self.x_train)
+        ydim = len(self.y_train)
+        assert xdim == ydim, "x_train and y_train should have the same dimensions"
+        
+        nx = len(self.x_train[0]) if isinstance(self.x_train[0], list) else 1
+        ny = len(self.y_train[0]) if isinstance(self.y_train[0], list) else 1
+        layer_sizes = [nx] + hidden_layer_sizes + [ny]
+
         layers = []
         for i in range(len(layer_sizes)-1):
             n_inputs = layer_sizes[i]
@@ -59,21 +68,30 @@ class MLP:
             layers.append(Layer(n_inputs, n_outputs))
         return layers
 
-    def __call__(self, x):
+    def processs_vector(self, x:List[Value]):
         """
-        Use the previous layer's output for the next layer's input
+        Take an input vector `x` and return the neural network output vector by 
+        going through each layer and using the previous layer's output for the 
+        next layer's input
         """
         for layer in self.layers:
             x = layer(x)
         return x[0] if len(x) == 1 else x
     
     def parameters(self):
+        """
+        Obtain all the parameters (weights and biases) of the neural network
+        """
         return [p for layer in self.layers for p in layer.parameters()]
     
-    def gradient_descent(self, step_size=0.01):
+    def perform_gradient_descent(self, step_size:float=0.01):
         """
         Update parameters (weights and biases) based on their gradient 
         (partial derrivative of loss function with respect to said parameter)
+
+        Parameteres:
+            - step_size (float): scale factor for each step in the gradient 
+            descent method
         """
         for p in self.parameters():
             p.data += -step_size*p.gradient
@@ -82,17 +100,25 @@ class MLP:
         """
         Given input data return the prediction of the model as output data
         """
-        y_pred = []
-        for xi in x:
-            for layer in self.layers:
-                xi = layer(xi)
-            y_pred.append(xi[0] if len(xi) == 1 else xi)
-        return y_pred
+        if isinstance(x[0], list):
+            y_pred = []
+            for xi in x:
+                y_pred.append( self.processs_vector(xi))
+            return y_pred
+        else:
+            y_pred = self.processs_vector(x)
+            return y_pred
 
     def calculate_loss(self, y_train, y_pred):
         return sum((yt - yp)**2 for yt, yp in zip(y_train, y_pred))  
     
-    def train(self, x_train, y_train, thresehold=0.01, max_iterations=1_000, step_size=0.01):
+    def perform_backward_propagation(self, loss):
+        for p in self.parameters():
+            p.grad = 0
+        loss.back_propogate()
+
+    
+    def train(self, thresehold=0.01, max_iterations=1_000, step_size=0.01):
         loss_value = 10**10
         counter = 0
         while loss_value > thresehold:
@@ -100,14 +126,29 @@ class MLP:
                 print('Exceeded maximum number of iterations')
                 break 
             
-            y_pred = self.predict(x_train)
+            y_pred = self.predict(self.x_train)
+            loss = self.calculate_loss(self.y_train, y_pred)
+            self.perform_backward_propagation(loss)
+            self.perform_gradient_descent(step_size)
             
-            loss = self.calculate_loss(y_train, y_pred)
-            loss.back_propogate()
             loss_value = loss.data
-
-            self.gradient_descent(step_size)
             counter += 1
             
-            print(loss)
-         
+
+
+if __name__ == "__main__":
+    xs = [
+        [2.,  3., -1.],
+        [3., -1.,  .5],
+        [.5,  1.,  1.],
+        [1.,  1., -1.],
+    ]
+
+    ys = [1., -1., -1., 1.]
+
+    model = MLP(xs, ys, hidden_layer_sizes=[4, 4])
+    model.train()
+
+    for x in xs:
+        print(model.predict(x))
+        
