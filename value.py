@@ -1,3 +1,4 @@
+import math 
 
 
 class Value:
@@ -7,15 +8,16 @@ class Value:
         self.symbol = symbol if symbol is not None else expression
         self.expression = expression 
         self.operation = operation
+        self.backwards = lambda: None
         self.gradient = 0
 
-        self.previous = set(children)
+        self.children = set(children)
 
     def __repr__(self) -> str:
         return f"Value({self.data})"
     
     def get_label(self):
-        if self.expression is not None:
+        if self.expression:
             label = f"{self.symbol} = {self.expression}"
             if self.expression == self.symbol:
                 label = f"{self.expression}"
@@ -31,6 +33,12 @@ class Value:
             children = (self, other), 
             operation = '+'
         )
+
+        def func():
+            self.gradient += 1.0 * output.gradient
+            other.gradient += 1.0 * output.gradient
+        output.backwards = func
+        
         return output
     
     def __sub__(self, other):
@@ -41,6 +49,12 @@ class Value:
             children = (self, other), 
             operation = '-'
         )
+
+        def func():
+            self.gradient += 1.0 * output.gradient
+            other.gradient += -1.0 * output.gradient
+        output.backwards = func
+        
         return output
     
     def __mul__(self, other):
@@ -51,6 +65,12 @@ class Value:
             children = (self, other), 
             operation = '*'
         )
+
+        def func():
+            self.gradient += other.data * output.gradient
+            other.gradient += self.data * output.gradient
+        output.backwards = func
+        
         return output
     
     def __truediv__(self, other):
@@ -77,7 +97,47 @@ class Value:
     
     def __rtruediv__(self, other):
         return self / other
+    
+    def __pow__(self, other):
+        assert isinstance(other, (int, float)), "only int/float powers"
+        output = Value(self.data**other, (self,), f'**{other}')
 
+        def func():
+            self.gradient += (other * self.data**(other-1)) * output.gradient
+        output.backwards = func
+
+        return output
+
+    def tanh(self):
+        x = self.data
+        t = (math.exp(2*x) - 1) / (math.exp(2*x) + 1)
+        output =  Value(
+            data= (math.exp(2*x) - 1) / (math.exp(2*x) + 1),
+            expression= f"tanh({self.symbol})",
+            children=(self, ),
+            operation='tanh'
+        )
+
+        def func():
+            self.gradient += (1 - t**2) * output.gradient
+        output.backwards = func
+        
+        return output        
+
+    def back_propogate(self):
+        self.gradient = 1.0
+
+        def build_topological_graph(tree, graph=[], visited=set()):
+            if tree not in visited:
+                visited.add(tree)
+                for child in tree.children:
+                    build_topological_graph(child, graph, visited)
+                graph.append(tree)
+            return graph
+        
+        for value in reversed(build_topological_graph(self)):
+            value.backwards()
+            
 
 if __name__ == "__main__":
     from visualization import Visualizer
@@ -88,9 +148,3 @@ if __name__ == "__main__":
     c = Value(10)
 
     d = a*b + c
-    
-    # visualizer.draw_diagram(d)
-
-    # print(d.__repr__())
-
-

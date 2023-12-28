@@ -2,9 +2,10 @@ from graphviz import Digraph
 
 
 class Visualizer:
-
-    def __init__(self) -> None:
-        pass
+    """
+    This class can only be used in combination with graphviz: `brew install 
+    graphviz`
+    """
 
     @staticmethod
     def trace_tree(root_node):
@@ -15,14 +16,20 @@ class Visualizer:
         def trace(node):
             if node not in nodes:
                 nodes.add(node)
-                for child_node in node.previous:
+                for child_node in node.children:
                     edges.add((child_node, node))
                     trace(child_node)
             
         trace(root_node)
         return nodes, edges
 
-    def draw_diagram(self, tree, direction='TB'):  # LR = Left-to-Right
+    def draw_diagram(self, tree, direction='TB'):  
+        """
+        Args:
+        -----
+            direction: direction in which the tree should be drawn 
+            TB = Top-to-Bottom, LR = Left-to-Right
+        """
         graph = Digraph(format='svg', graph_attr={'rankdir': direction})  
         
         nodes, edges = self.trace_tree(tree)
