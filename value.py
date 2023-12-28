@@ -3,9 +3,9 @@ import math
 
 class Value:
 
-    def __init__(self, data: float, symbol: str = None, expression: str = None, children: tuple = (), operation: str ='') -> None:
+    def __init__(self, data: float, symbol: str = None, expression: str = '', children: tuple = (), operation: str ='') -> None:
         self.data = data
-        self.symbol = symbol if symbol is not None else expression
+        self.symbol = symbol if symbol else expression
         self.expression = expression 
         self.operation = operation
         self.backwards = lambda: None
@@ -29,7 +29,7 @@ class Value:
         other = other if isinstance(other, Value) else Value(other)  # ensure other is an instance of the Value class
         output = Value(
             data = self.data + other.data, 
-            expression = f"{self.symbol} + {other.symbol}",
+            expression = f"{self.symbol} + {other.symbol}" if self.symbol and other.symbol else '',
             children = (self, other), 
             operation = '+'
         )
@@ -45,7 +45,7 @@ class Value:
         other = other if isinstance(other, Value) else Value(other)  # ensure other is an instance of the Value class
         output = Value(
             data = self.data - other.data, 
-            expression = f"{self.symbol} - {other.symbol}",
+            expression = f"{self.symbol} - {other.symbol}" if self.symbol and other.symbol else '',
             children = (self, other), 
             operation = '-'
         )
@@ -61,7 +61,7 @@ class Value:
         other = other if isinstance(other, Value) else Value(other)  # ensure other is an instance of the Value class
         output = Value(
             data = self.data * other.data, 
-            expression = f"{self.symbol} * {other.symbol}",
+            expression = f"{self.symbol} * {other.symbol}" if self.symbol and other.symbol else '',
             children = (self, other), 
             operation = '*'
         )
@@ -77,7 +77,7 @@ class Value:
         other = other if isinstance(other, Value) else Value(other)  # ensure other is an instance of the Value class
         output = Value(
             data = self.data / other.data, 
-            expression = f"{self.symbol} / {other.symbol}",
+            expression = f"{self.symbol} / {other.symbol}" if self.symbol and other.symbol else '',
             children = (self, other), 
             operation = '/'
         )
@@ -100,7 +100,12 @@ class Value:
     
     def __pow__(self, other):
         assert isinstance(other, (int, float)), "only int/float powers"
-        output = Value(self.data**other, (self,), f'**{other}')
+        output = Value(
+            data = self.data**other, 
+            children=(self,), 
+            operation=f'**{other}',
+            expression=f'{self.symbol}**{self.other}' if self.symbol and other.symbol else '',
+        )
 
         def func():
             self.gradient += (other * self.data**(other-1)) * output.gradient
@@ -113,7 +118,7 @@ class Value:
         t = (math.exp(2*x) - 1) / (math.exp(2*x) + 1)
         output =  Value(
             data= (math.exp(2*x) - 1) / (math.exp(2*x) + 1),
-            expression= f"tanh({self.symbol})",
+            expression= f"tanh({self.symbol})" if self.symbol else '',
             children=(self, ),
             operation='tanh'
         )
