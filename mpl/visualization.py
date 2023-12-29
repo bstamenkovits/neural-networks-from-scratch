@@ -25,7 +25,7 @@ def draw_diagram(tree, direction='TB'):
         node_id = str(id(node))  # unique node id
         
         # all result_nodes
-        graph.node(name=node_id, label=f"{node.get_label()} | {node.data:.3f} | ∇ = {node.gradient:.3f}", shape='record')  # record = rectangular
+        graph.node(name=node_id, label=f"{node.get_label()} | {node.data:.3f} | gradient = {node.gradient:.3f}", shape='record')  # record = rectangular
         
         # arrow from operation_node to result_node
         if node.operation:
