@@ -1,4 +1,7 @@
 # neural-networks-from-scratch
 
-brew install graphviz
+## Windows
+https://graphviz.org/download/
 
+## MacOS
+brew install graphviz
