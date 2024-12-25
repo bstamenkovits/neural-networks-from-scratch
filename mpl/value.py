@@ -81,7 +81,9 @@ class Value:
         """
         output = self * other
         """
-        other = other if isinstance(other, Value) else Value(other)  # ensure other is an instance of the Value class
+        # ensure other is an instance of the Value class
+        other = other if isinstance(other, Value) else Value(other)
+
         output = Value(
             data = self.data * other.data,
             expression = f"{self.symbol} * {other.symbol}" if self.symbol and other.symbol else '',
@@ -102,28 +104,39 @@ class Value:
         return output
 
     def __truediv__(self, other):
-        other = other if isinstance(other, Value) else Value(other)  # ensure other is an instance of the Value class
-        output = Value(
-            data = self.data / other.data,
-            expression = f"{self.symbol} / {other.symbol}" if self.symbol and other.symbol else '',
-            children = (self, other),
-            operation = '/'
-        )
-        return output
+        return self * other**-1
 
     def __neg__(self):
         return self * -1
 
     def __radd__(self, other):
+        """
+        reverse add method
+
+        This functioon is only called when the left operand does not support
+        the operation performed by the right operand. For example:
+
+        3 + Value(2) = 3.__add__(Value(2)) = Unimplemented
+
+        Instead of raising an error, the __radd__ method is called which simply
+        reverses the operation. In this case, it is equivalent to:
+
+        Value(2) + 3
+        """
+        # reverse add
+        # 3 + Value(2) => Value(2) + 3
         return self + other
 
     def __rsub__(self, other):
+        """see __radd__"""
         return self - other
 
     def __rmul__(self, other):
+        """see __radd__"""
         return self * other
 
     def __rtruediv__(self, other):
+        """see __radd__"""
         return self / other
 
     def __pow__(self, other):
@@ -149,15 +162,15 @@ class Value:
         x = self.data
         t = (math.exp(2*x) - 1) / (math.exp(2*x) + 1)
         output =  Value(
-            data= (math.exp(2*x) - 1) / (math.exp(2*x) + 1),
+            data= t,
             expression= f"tanh({self.symbol})" if self.symbol else '',
             children=(self, ),
             operation='tanh'
         )
 
-        def func():
+        def backwards():
             self.gradient += (1 - t**2) * output.gradient
-        output.backwards = func
+        output.backwards = backwards
 
         return output
 
@@ -174,6 +187,14 @@ class Value:
 
         for value in reversed(build_topological_graph(self)):
             value.backwards()
+
+
+def tanh(x:Value) -> Value:
+    """
+    Assuming `x` is a `Value` object, call its `tanh` method
+    """
+    assert isinstance(x, Value), "x should be a Value object"
+    return x.tanh()
 
 
 if __name__ == "__main__":
