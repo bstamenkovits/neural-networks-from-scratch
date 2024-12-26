@@ -1,9 +1,17 @@
 import math
+from typing import List, Set
 
 
 class Value:
 
-    def __init__(self, data: float, symbol: str = None, expression: str = '', children: tuple = (), operation: str ='') -> None:
+    def __init__(
+        self,
+        data: float,
+        symbol: str = None,
+        expression: str = '',
+        children: tuple = (),
+        operation: str =''
+    ) -> None:
         self.data = data
         self.symbol = symbol if symbol else expression
         self.expression = expression
@@ -159,6 +167,13 @@ class Value:
         return output
 
     def tanh(self):
+        """
+        Perform the tanh operation on the value
+
+        For its definition see:
+        https://en.wikipedia.org/wiki/Hyperbolic_functions
+
+        """
         x = self.data
         t = (math.exp(2*x) - 1) / (math.exp(2*x) + 1)
         output =  Value(
@@ -175,9 +190,31 @@ class Value:
         return output
 
     def back_propogate(self):
+        """
+        Use back propagation to update the gradients of each Value object in the
+        computational graph.
+
+        First a topological graph is constructed using dynamic programming. This
+        graph contains the furthest children nodes first, and the root node
+        last.
+
+        The topological graph is then traversed in reverse order, and the
+        gradient is computed.
+        """
         self.gradient = 1.0
 
-        def build_topological_graph(tree, graph=[], visited=set()):
+        def build_topological_graph(
+            tree:Value,
+            graph:List[Value]=[],
+            visited:Set[Value]=set()
+        ) -> None:
+            """
+            Build a topological graph of the tree.
+
+            The topological graph is a list of nodes where the children of a
+            node appear before the node itself (i.e. the furthest most children
+            appear in the list first, and the parent/root node appears last)
+            """
             if tree not in visited:
                 visited.add(tree)
                 for child in tree.children:
@@ -191,7 +228,13 @@ class Value:
 
 def tanh(x:Value) -> Value:
     """
-    Assuming `x` is a `Value` object, call its `tanh` method
+    Assuming `x` is a `Value` object, call its `tanh` method in itself.
+
+    Args:
+        x(Value): Value object
+
+    Returns:
+        (Value): Value object with the tanh operation applied to it.
     """
     assert isinstance(x, Value), "x should be a Value object"
     return x.tanh()

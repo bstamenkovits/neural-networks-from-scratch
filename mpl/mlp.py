@@ -4,6 +4,11 @@ from value import Value, tanh
 
 
 class Neuron:
+    """
+    The Neuron class represents a single neuron in a neural network. Each neuron
+    has a set of weights and biases that are used to calculate the output of the
+    neuron given an input vector.
+    """
 
     def __init__(self, n_input_values:int) -> None:
         self.w = [Value(random.uniform(-1, 1)) for _ in range(n_input_values)]
@@ -31,10 +36,17 @@ class Neuron:
 
     @property
     def parameters(self) -> List[Value]:
+        """All the weights and biases of the neuron"""
         return self.w + [self.b]
 
 
 class Layer:
+    """
+    A Layer object represents a set of neurons in a neural network. Each neuron
+    in the layer has the same number of input values, and the output of each
+    neuron in the layer is used as input for the next layer in the neural
+    network.
+    """
 
     def __init__(self, n_inputs:int, n_outputs:int) -> None:
         """
@@ -50,18 +62,19 @@ class Layer:
     def __call__(self, x: List[float]) -> List[Value]:
         """
         Given an input vector x, calculate the output of each neuron in the
-        layer.
+        layer, and return a list of the output values (output vector).
 
         Args:
             x (List[float]): input vector
 
         Returns:
-            List[Value]: list of output values for each neuron in the layer
+            List[Value]: output vector
         """
         return [neuron(x) for neuron in self.neurons]
 
     @property
     def parameters(self):
+        """All the weights and biases of the neurons in the layer"""
         return [p for neuron in self.neurons for p in neuron.parameters]
 
 
@@ -116,7 +129,9 @@ class MLP:
         # check that x_train and y_train have the same dimensions
         xdim = len(self.x_train)
         ydim = len(self.y_train)
-        assert xdim == ydim, "x_train and y_train should have the same dimensions"
+
+        if not xdim == ydim:
+            raise ValueError("x_train and y_train should have the same dimensions")
 
         # determine layer input/output sizes
         nx = len(self.x_train[0]) if isinstance(self.x_train[0], list) else 1
@@ -189,7 +204,7 @@ class MLP:
         """
         return sum((yt - yp)**2 for yt, yp in zip(y_train, y_pred))
 
-    def update_gradients(self, loss):
+    def update_gradients(self, loss:Value) -> None:
         """
         Use backpropagation to calculate the gradient of the loss function with
         respect to each parameter (weights and biases) in the neural network.
@@ -234,6 +249,8 @@ if __name__ == "__main__":
     model = MLP(xs, ys, hidden_layer_sizes=[4, 4])
     # print()
     model.train()
+
+    print(model.parameters)
 
     for x in xs:
         y = model.predict(x).data
