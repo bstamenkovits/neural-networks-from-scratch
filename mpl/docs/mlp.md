@@ -31,7 +31,7 @@ Some common activation functions:
 ## Layer
 A single neuron will take an input vector, and convert that into an output value. To increase the complexity of the network a set of neurons (each with different weights and biases) can be used to create multiple output values. All of these output values can be stored in a list/array as an output vector. This way a Layer in a MLP neural network can receive an input vector, and calculate an output vector.
 
-This allows data to be transformed during multiple stages before being returned as the network output (i.e. take an input vector $x# and create a prediction vector $\hat y$)
+This allows data to be transformed during multiple stages before being returned as the network output (i.e. take an input vector $x$ and create a prediction vector $\hat y$)
 
 
 ## Gradient Descent
