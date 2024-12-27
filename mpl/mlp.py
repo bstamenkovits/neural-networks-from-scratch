@@ -1,5 +1,5 @@
 import random
-from typing import Any, List
+from typing import Any, List, Tuple
 from value import Value, tanh
 
 
@@ -10,9 +10,23 @@ class Neuron:
     neuron given an input vector.
     """
 
-    def __init__(self, n_input_values:int) -> None:
-        self.w = [Value(random.uniform(-1, 1)) for _ in range(n_input_values)]
-        self.b = Value(random.uniform(-1, 1))
+    activation_functions = {
+        'tanh': tanh,
+        'linear': lambda x: x,
+    }
+
+    def __init__(self, n_input_values:int, activation_function:str='linear') -> None:
+        # parameters (weights and biases)
+        self.w = [Value(random.uniform(-1, 1), symbol=f'w{i}') for i in range(n_input_values)]
+        self.b = Value(random.uniform(-1, 1), symbol='b')
+
+        # activation function
+        if activation_function not in self.activation_functions:
+            raise ValueError(
+                f"Activation function '{activation_function}' not supported. \n"
+                f"Supported activation functions: {list(self.activation_functions.keys())}"
+            )
+        self.f = self.activation_functions[activation_function]
 
     def __repr__(self):
         return f"Neuron({len(self.w)})"
@@ -32,7 +46,9 @@ class Neuron:
         """
         assert len(x) == len(self.w), "inputs and weights are of different sizes"
         s = sum((wi*xi for wi, xi in zip(self.w, x)), self.b)
-        return tanh(s)
+        # if s.data> 100 or s.data < -100:
+        #     print('Warning: large value')
+        return self.f(s)
 
     @property
     def parameters(self) -> List[Value]:
@@ -48,13 +64,13 @@ class Layer:
     network.
     """
 
-    def __init__(self, n_inputs:int, n_outputs:int) -> None:
+    def __init__(self, n_inputs:int, n_outputs:int, activation_function:str) -> None:
         """
         Args:
             n_inputs (int): number of input values
             n_outputs (int): number of output values
         """
-        self.neurons = [Neuron(n_inputs) for _ in range(n_outputs)]
+        self.neurons = [Neuron(n_inputs, activation_function) for _ in range(n_outputs)]
 
     def __repr__(self):
         return f"Layer({len(self.neurons)})"
@@ -84,7 +100,7 @@ class MLP:
             self,
             x_train:List[float] | List[List[float]],
             y_train:List[float] | List[List[float]],
-            hidden_layer_sizes: List[int],
+            hidden_layers: List[Tuple[Any]],
         ) -> None:
         """
         Initialize the Multi-Layer Perceptron (MLP) model with the input data
@@ -105,9 +121,9 @@ class MLP:
         """
         self.x_train = x_train
         self.y_train = y_train
-        self.layers = self._construct_layers(hidden_layer_sizes)
+        self.layers = self._construct_layers(hidden_layers)
 
-    def _construct_layers(self, hidden_layer_sizes: List[int]) -> List[Layer]:
+    def _construct_layers(self, hidden_layers: List[Tuple[Any]]) -> List[Layer]:
         """
         Construct the layers of the neural network based on the input data.
 
@@ -126,27 +142,23 @@ class MLP:
         Returns:
             List[Layer]: list of layers in the neural network
         """
-        # check that x_train and y_train have the same dimensions
-        xdim = len(self.x_train)
-        ydim = len(self.y_train)
-
-        if not xdim == ydim:
-            raise ValueError("x_train and y_train should have the same dimensions")
-
-        # determine layer input/output sizes
+        # determine input/output sizes of model
         nx = len(self.x_train[0]) if isinstance(self.x_train[0], list) else 1
         ny = len(self.y_train[0]) if isinstance(self.y_train[0], list) else 1
-        sizes = [nx] + hidden_layer_sizes + [ny]
 
-        # construct layer objects
+        # create hidden layers
         layers = []
-        for i in range(len(sizes)-1):
-            n_inputs = sizes[i]
-            n_outputs = sizes[i+1]
-            layers.append(Layer(n_inputs, n_outputs))
+        n_inputs = nx
+        for n_outputs, activation_function in hidden_layers:
+            layers.append(Layer(n_inputs, n_outputs, activation_function))
+            n_inputs = n_outputs
+
+        # add output layer (linear activation function)
+        layers.append(Layer(n_inputs, ny, 'linear'))
+
         return layers
 
-    def _processs_vector(self, x:List[Value]) -> Value | List[Value]:
+    def _process_vector(self, x:List[Value]) -> Value | List[Value]:
         """
         Take an input vector `x` and return the neural network output vector by
         going through each layer and using the previous layer's output for the
@@ -163,18 +175,6 @@ class MLP:
         """
         return [p for layer in self.layers for p in layer.parameters]
 
-    def update_parameters(self, step_size:float=0.01) -> None:
-        """
-        Update parameters (weights and biases) based on their gradient
-        (partial derrivative of loss function with respect to said parameter)
-
-        Args:
-            step_size (float): scale factor for each step in the gradient
-                descent method
-        """
-        for p in self.parameters:
-            p.data += -step_size*p.gradient
-
     def predict(self, x:List[float] | List[List[float]]) -> List[float]:
         """
         Given input data x return the prediction y_pred of the model.
@@ -189,10 +189,10 @@ class MLP:
         if isinstance(x[0], list):
             y_pred = []
             for xi in x:
-                y_pred.append( self._processs_vector(xi))
+                y_pred.append( self._process_vector(xi))
             return y_pred
         else:
-            y_pred = self._processs_vector(x)
+            y_pred = self._process_vector(x)
             return y_pred
 
     def calculate_loss(self, y_train, y_pred):
@@ -214,7 +214,25 @@ class MLP:
             p.grad = 0
         loss.back_propogate()
 
-    def train(self, thresehold=0.001, max_iterations=1_000, step_size=0.01):
+    def update_parameters(self, step_size:float=0.01) -> None:
+        """
+        Update parameters (weights and biases) based on their gradient
+        (partial derrivative of loss function with respect to said parameter)
+
+        Args:
+            step_size (float): scale factor for each step in the gradient
+                descent method
+        """
+        for p in self.parameters:
+            # if p.gradient > 50 or p.gradient < -50:
+            #     print('Warning: large gradient')
+            # if p.data > 50 or p.data < -50:
+            #     print('Warning: large gradient')
+
+            p.data += -step_size*p.gradient
+            # print()
+
+    def train(self, thresehold=0.01, max_iterations=1_000, step_size=0.01):
         loss_value = 10**10
         counter = 0
         while loss_value > thresehold:
@@ -232,11 +250,22 @@ class MLP:
             self.update_gradients(loss)
             self.update_parameters(step_size)
 
+            # print(f'Iteration: {counter}, Loss: {loss.data}')
+            # print(f'Prediction: {y_pred}')
+            # print(f'Parameters: {self.parameters}')
+            # print(f"Gradients: {[p.gradient for p in self.parameters]}")
+
             loss_value = loss.data
             counter += 1
 
 
 if __name__ == "__main__":
+    xs = [
+        [Value(1., 'x1')],
+        [Value(2., 'x2')],
+    ]
+    ys = [Value(1., 'y1'), Value(2., 'y2')]
+
     xs = [
         [2.,  3., -1.],
         [3., -1.,  .5],
@@ -246,11 +275,11 @@ if __name__ == "__main__":
 
     ys = [1., -1., -1., 1.]
 
-    model = MLP(xs, ys, hidden_layer_sizes=[4, 4])
-    # print()
-    model.train()
 
-    print(model.parameters)
+    hidden_layers = [(3, 'tanh'), (4, 'tanh')]
+
+    model = MLP(xs, ys, hidden_layers=hidden_layers)
+    model.train(thresehold=0.0001, step_size=0.00001, max_iterations=10_000)
 
     for x in xs:
         y = model.predict(x).data

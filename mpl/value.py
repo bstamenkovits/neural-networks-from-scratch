@@ -22,7 +22,7 @@ class Value:
         self.children = set(children)
 
     def __repr__(self) -> str:
-        return f"Value({self.data})"
+        return f"{self.symbol} = Value({self.data})"
 
     def get_label(self):
         if self.expression:
@@ -153,7 +153,7 @@ class Value:
             data = self.data**other,
             children=(self,),
             operation=f'**{other}',
-            expression=f'{self.symbol}**{self.other}' if self.symbol and other.symbol else '',
+            expression=f'{self.symbol}**{other}' if self.symbol else '',
         )
 
         def backwards():
