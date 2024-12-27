@@ -4,6 +4,17 @@ from typing import List, Set
 
 class Value:
 
+    """
+    A class representing a value in a computational graph, necessary for
+    back propagation in a neural network.
+
+    The class is used to represent values/variables in the neural network. It
+    keeps track of each mathematical operation performed on it, and stores the
+    children nodes in the computational graph. In addition each mathematical
+    operation has an associated backwards function which is used to update the
+    gradients of the children nodes while performing back propagation.
+    """
+
     def __init__(
         self,
         data: float,

@@ -10,6 +10,7 @@ class Neuron:
     neuron given an input vector.
     """
 
+    # supported activation functions
     activation_functions = {
         'tanh': tanh,
         'linear': lambda x: x,
@@ -45,10 +46,13 @@ class Neuron:
             Value: output of the neuron
         """
         assert len(x) == len(self.w), "inputs and weights are of different sizes"
+
+        # weighted sum
         s = sum((wi*xi for wi, xi in zip(self.w, x)), self.b)
-        # if s.data> 100 or s.data < -100:
-        #     print('Warning: large value')
-        return self.f(s)
+        # apply activation function
+        output = self.f(s)
+
+        return output
 
     @property
     def parameters(self) -> List[Value]:
@@ -224,13 +228,7 @@ class MLP:
                 descent method
         """
         for p in self.parameters:
-            # if p.gradient > 50 or p.gradient < -50:
-            #     print('Warning: large gradient')
-            # if p.data > 50 or p.data < -50:
-            #     print('Warning: large gradient')
-
             p.data += -step_size*p.gradient
-            # print()
 
     def train(self, thresehold=0.01, max_iterations=1_000, step_size=0.01):
         loss_value = 10**10
@@ -249,11 +247,6 @@ class MLP:
             # use gradient descent to update the parameters
             self.update_gradients(loss)
             self.update_parameters(step_size)
-
-            # print(f'Iteration: {counter}, Loss: {loss.data}')
-            # print(f'Prediction: {y_pred}')
-            # print(f'Parameters: {self.parameters}')
-            # print(f"Gradients: {[p.gradient for p in self.parameters]}")
 
             loss_value = loss.data
             counter += 1
