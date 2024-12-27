@@ -20,4 +20,4 @@ For more information about MLPs, and the implementation in this repo, see [mlp.m
 
 
 ## Acknowledgements
-This work is based on Andrey Karpathy's [micrograd](https://github.com/karpathy/micrograd), I simply made a similar model in order to gain a better understanding of neural networks.
+This work is based on Andrey Karpathy's [micrograd](https://github.com/karpathy/micrograd), I simply made a similar model in order to gain a better understanding of neural networks. Youtube code along video: https://www.youtube.com/watch?v=VMj-3S1tku0&t=5119s
