@@ -6,7 +6,7 @@ A Multi Layer Perceptron (MLP) is a simple type of Feedforward Neural Network (F
 ## Perceptron (Neuron)
 A neuron is the basic component of a neural network that performs a small calculation. In a MLP neural network these neurons are relatively simple and called "Perceptrons".
 
-A neuron is ![alt text](attachments/neuron.png)
+![alt text](attachments/neuron.png)
 
 Each Neuron takes in a set of input values $x_1, x_2, ... , x_n$ (usually denoted by a vector $X$), and returns a single output value. Each Neuron has a set of weights $w_1, w_2, ... , w_n$ and a bias $b$, which it uses to calculate the output value $y$.
 
