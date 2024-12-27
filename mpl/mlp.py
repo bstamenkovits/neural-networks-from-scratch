@@ -99,6 +99,20 @@ class Layer:
 
 
 class MLP:
+    """
+    A Multi-Layer Perceptron (MLP) neural network.
+
+    This class represents a neural network with multiple layers, which can be
+    configured by the user. The user can specify the number of neurons in each
+    hidden layer and the activation function to use for each layer.
+
+    The neural network is trained using the backpropagation algorithm, which
+    updates the weights and biases of the network based on the error between the
+    predicted output and the expected output.
+
+    The neural network can be used to make predictions on new input data after
+    training.
+    """
 
     def __init__(
             self,
@@ -114,14 +128,16 @@ class MLP:
         the input and output data can either be a single vector (List[float]) or
         a list of vectors (List[List[float]]).
 
-        The hidden layers can be configured by providing a list of integers.
-        Each integer in the list represents the number of neurons in that layer.
+        The hidden layers can be configured by providing a list of tuples. Each
+        tuple contains the number of neurons in the layer (int) and the
+        activation function to use (str). The supported activation functions are
+        `'tanh'` and `'linear'`.
 
         Args:
             x_train (List[float] | List[List]): input data
             y_train List[float] | List[List]): output data
-            hidden_layer_sizes (List[int]): list of integers representing the
-                size of each hidden layer in the neural network
+            hidden_layer_sizes (List[Tuple]): list of tuples representing the
+                size of each hidden layer in the neural network.
         """
         self.x_train = x_train
         self.y_train = y_train
@@ -140,8 +156,8 @@ class MLP:
         transformations that are applied to the input data for a given layer.
 
         Args:
-            hidden_layer_sizes (List[int]): list of integers representing the
-                size of each hidden layer in the neural network
+            hidden_layer_sizes (List[Tuple]): list of tuples representing the
+                size of each hidden layer in the neural network.
 
         Returns:
             List[Layer]: list of layers in the neural network
@@ -230,7 +246,22 @@ class MLP:
         for p in self.parameters:
             p.data += -step_size*p.gradient
 
-    def train(self, thresehold=0.01, max_iterations=1_000, step_size=0.01):
+    def train(
+        self,
+        thresehold=0.01,
+        max_iterations=1_000,
+        step_size=0.01
+    ) -> None:
+        """
+        Train the neural network using the backpropagation algorithm. The
+        training process continues until the loss function is below the
+        threshold value or the maximum number of iterations is reached.
+
+        Args:
+            thresehold (float): minimum loss value to stop training
+            max_iterations (int): maximum number of iterations to train
+            step_size (float): step size used in gradient descent
+        """
         loss_value = 10**10
         counter = 0
         while loss_value > thresehold:
@@ -254,12 +285,6 @@ class MLP:
 
 if __name__ == "__main__":
     xs = [
-        [Value(1., 'x1')],
-        [Value(2., 'x2')],
-    ]
-    ys = [Value(1., 'y1'), Value(2., 'y2')]
-
-    xs = [
         [2.,  3., -1.],
         [3., -1.,  .5],
         [.5,  1.,  1.],
@@ -267,7 +292,6 @@ if __name__ == "__main__":
     ]
 
     ys = [1., -1., -1., 1.]
-
 
     hidden_layers = [(3, 'tanh'), (4, 'tanh')]
 

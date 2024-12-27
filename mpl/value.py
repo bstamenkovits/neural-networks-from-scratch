@@ -5,8 +5,8 @@ from typing import List, Set
 class Value:
 
     """
-    A class representing a value in a computational graph, necessary for
-    back propagation in a neural network.
+    A class representing a value in a computational graph, necessary for back
+    propagation in a neural network.
 
     The class is used to represent values/variables in the neural network. It
     keeps track of each mathematical operation performed on it, and stores the
